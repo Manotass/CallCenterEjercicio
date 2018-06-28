@@ -4,7 +4,7 @@ public class Empleado {
     private boolean ocupado;
     private String identificador;
 
-
+    /**CLASE QUE CONTIENE LOS ATRIBUTOS DE UN EMPLEADO*/
     public Empleado(String tipo,boolean ocupado,String identificador){
 
         this.tipo=tipo;
@@ -13,6 +13,7 @@ public class Empleado {
 
     }
 
+    /**SETTER AND GETTERS DE LOS ATRIBUTOS*/
     public String getTipo() {
         return tipo;
     }

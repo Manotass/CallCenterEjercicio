@@ -4,11 +4,13 @@ public class Llamada {
     private int duracion;
     private Empleado empleado;
 
+    /**CLASE QUE CONTIENE LOS ATRIBUTOS DE UNA LLAMADA*/
     public Llamada(String nombreCliente) {
         this.nombreCliente = nombreCliente;
         this.duracion = duracion;
     }
 
+    /**SETTER AND GETTERS DE LOS ATRIBUTOS*/
     public String getNombreCliente() {
         return nombreCliente;
     }
