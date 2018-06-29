@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 
 public class Dispatcher {
@@ -26,35 +27,27 @@ public class Dispatcher {
     public Dispatcher() {
 
     }
-    /**METODO QUE SE ENCARGA DE RECORRER LAS LLAMADAS Y ENVIARLAS AL ASIGNADOR*/
+    int numeroThread=0;
+    /**METODO QUE SE ENCARGA DE ASIGNAR LLAMADAS*/
     public void administradorLLamadas() {
-
-        for (int i = 0; i < llamadas.size(); i++) {
-
-            this.asignarLlamadas(llamadas.get(i), "THREAD" + i);
-            System.out.println("LLAMADAS ATENDIDAS " + llamadasAtendidas);
-            System.out.println("LLAMADAS RESTANTES " + llamadas.size());
+        if(llamadas.size()>0) {
+            /**BUSCAMOS SI HAY EMPLEADOS DISPONIBLES PARA ATENDER LAS LLAMADAS*/
+            empleadoQueAtendera = this.buscarEmpleadoDisponible();
+            if (empleadoQueAtendera!=null) {
+                /**CAMBIAMOS EL ESTADO DEL EMPLEADO A OCUPADO PARA QUE NO VAYA A SER ASIGNADO A OTRO HILO DE PROCESAMIENTO*/
+                numeroThread++;
+                empleadoQueAtendera.setOcupado(true);
+                Llamada llamada = llamadas.get(0);
+                llamadas.remove(llamada);
+                llamadasAtendidas++;
+                /**LLAMADOS LA CLASE THREAD PARA CREAR UN NUEVO HILO DE PROCESAMIENTO*/
+                new DispatchCalls(llamada, empleadoQueAtendera, "THREAD" + numeroThread,this);
+                this.administradorLLamadas();
+            }
         }
 
     }
-    /**METODO QUE SE ENCARGA DE CREAR ASIGNAR UNA LLAMADA A UN EMPLEADO A TRAVEZ DE UN HILO*/
 
-    public void asignarLlamadas(Llamada llamada, String numeroThread) {
-        llamadasAtendidas++;
-        /**BUSCAMOS SI HAY EMPLEADOS DISPONIBLES PARA ATENDER LAS LLAMADAS*/
-        empleadoQueAtendera = this.buscarEmpleadoDisponible();
-        if (empleadoQueAtendera == null) {
-            System.out.println("NO HAY EMPLEADOS");
-
-        } else {
-            /**CAMBIAMOS EL ESTADO DEL EMPLEADO A OCUPADO PARA QUE NO VAYA A SER ASIGNADO A OTRO HILO DE PROCESAMIENTO*/
-            empleadoQueAtendera.setOcupado(true);
-            /**LLAMADOS LA CLASE THREAD PARA CREAR UN NUEVO HILO DE PROCESAMIENTO*/
-            new DispatchCalls(llamada, empleadoQueAtendera, numeroThread);
-
-
-        }
-    }
     /**METODO QUE RETORNA UN EMPLEADO DISPONIBLES
  * LA BUSQUEDA SE HACE EN ORDER JENRARQUICO ASCENDENTE*/
     public Empleado buscarEmpleadoDisponible() {
@@ -79,6 +72,10 @@ public class Dispatcher {
         /**DE NO ENCONTRAR NINGUNO RETORNAMOS NULL*/
         return null;
     }
+    /**METODO QUE SE EJECUTA UNA VEZ UNA LLAMADA HA TERMINADO PARA QUE LAS PENDIENTES SEAN ATENDIDAS*/
+    public void empleadoLiberado() {
+        this.administradorLLamadas();
+    }
 }
 
 /**CLASE THREAD QUE SE ENCARGA DE GENERAR EL HILO DE PROCESAMIENTO QUE ATIENDE UNA LLAMADA*/
@@ -87,6 +84,7 @@ class DispatchCalls extends Thread {
     Llamada llamada;
     Empleado empleado;
     String numeroThread;
+    Dispatcher dispatcher;
     /**COMO PARTE DEL EJERCICIO GENERAMOS UN NUMERO ALEATORIO ENTRE 5000 Y 10000 QUE
      * REPRESENTA LA DURACION DE LA LLAMADA*/
     int tiempoLlamada = (int) (Math.random() * 5500 + 5000);
@@ -98,11 +96,11 @@ class DispatchCalls extends Thread {
     }
 
     /**CONTRUCTOR DE LA CLASE QUE SE ENCARGA DE ASIGNAR VARIABLES E INICIAR EL HILO*/
-    public DispatchCalls(Llamada llamada, Empleado empleado, String numeroThread) {
+    public DispatchCalls(Llamada llamada, Empleado empleado, String numeroThread,Dispatcher dispatcher) {
         this.llamada = llamada;
         this.empleado = empleado;
         this.numeroThread = numeroThread;
-        System.out.println("THREAD STARTS " + numeroThread);
+        this.dispatcher=dispatcher;
         this.start();
     }
     /**METODO QUE SIMULA A UN EMPLEADO ATENDIENDO UNA LLAMADA*/
@@ -120,6 +118,8 @@ class DispatchCalls extends Thread {
         /**UNA VEZ EL HILO SE DESPIERTA, QUIERE DECIR QUE LA LLAMDA TERMINO
          * MOTIVO POR EL CUAL PONEMOS COMO DISPONIBLE AL EMPLEADO ASIGNADO*/
         empleado.setOcupado(false);
+        /**AVISAMOS AL METODO PRINCIPAL QUE UN HILO HA TERMINADO SU EJECUCION Y POR ENDE UN EMPLEADO ESTA DISPONIBLE*/
+        dispatcher.empleadoLiberado();
         System.out.println(" --------------------- ");
 
 
